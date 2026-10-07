@@ -1,0 +1,4 @@
+import {gateway,errorResponse} from '@/lib/upstream';
+export const runtime='nodejs';
+export async function GET(){try{const r=await gateway('/gpu');if(!r.ok)return Response.json({error:'Metrics unavailable'},{status:502});const d=await r.json();if(!Array.isArray(d.gpus))return Response.json({error:'Invalid metrics response'},{status:502});return Response.json({timestamp:d.timestamp||new Date().toISOString(),gpus:d.gpus.slice(0,8).map((g:Record<string,unknown>,i:number)=>({index:Number(g.index??i),name:String(g.name||'GPU').slice(0,80),utilizationPercent:clamp(g.utilizationPercent),memoryUsedMiB:clamp(g.memoryUsedMiB),memoryTotalMiB:clamp(g.memoryTotalMiB),temperatureC:clamp(g.temperatureC),powerW:clamp(g.powerW)}))},{headers:{'Cache-Control':'no-store'}})}catch(e){return errorResponse(e)}}
+function clamp(v:unknown){const n=Number(v);return Number.isFinite(n)?Math.min(Math.max(n,0),100000):0}
